@@ -1,16 +1,14 @@
-
 const { ACTION_SETTINGS, VALID_ACTION_NAMES } = require("./action-settings");
 
 function formatActions(actions) {
   let actionsFormatted = [];
-  if (!(actions instanceof Array))
-    throw new Error("Actions must be array!");
+  if (!(actions instanceof Array)) throw new Error("Actions must be array!");
 
   for (let action of actions) {
     actionsFormatted.push(formatAction(action));
   }
 
-  return actionsFormatted
+  return actionsFormatted;
 }
 
 function formatAction(action) {
@@ -37,9 +35,9 @@ function formatAction(action) {
     }
 
     if (actionSetting.metaValidator instanceof Function) {
-      let metaValidation = actionSetting.metaValidator(meta)
-      if(typeof metaValidation === 'string') {
-        throw new Error(`Action '${name}' meta invalid - ${metaValidation}`)
+      let metaValidation = actionSetting.metaValidator(meta);
+      if (typeof metaValidation === "string") {
+        throw new Error(`Action '${name}' meta invalid - ${metaValidation}`);
       }
     }
 
@@ -90,5 +88,5 @@ function _genActionMetaFromCommand(template, actionSetting) {
 
 module.exports = {
   formatActions,
-  formatAction
+  formatAction,
 };

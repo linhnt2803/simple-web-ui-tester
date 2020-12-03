@@ -5,7 +5,7 @@ const {
   numberMinMax,
 } = require("../utils/validator");
 const { wait } = require("../utils");
-const { formatActions } = require('./action-formatter')
+const { formatActions } = require("./action-formatter");
 
 // logical: ['condition', 'actionTrue', 'actionFalse']
 // for: ['count', 'action']
@@ -191,13 +191,13 @@ const ACTION_SETTINGS = {
     templateCommand: null,
     regexCommand: null,
     metaValidator: function (meta) {
-      let { actions, groupName } = meta
+      let { actions, groupName } = meta;
 
-      meta.actions = formatActions(actions)
+      meta.actions = formatActions(actions);
 
       return validateAll([
         stringNotEmpty("selector")(groupName),
-        stringLengthMinMax("selector", 1, 512)(groupName)
+        stringLengthMinMax("selector", 1, 512)(groupName),
       ]);
     },
     handler: async function (meta, page) {
@@ -218,9 +218,9 @@ const ACTION_SETTINGS = {
   },
 };
 
-const VALID_ACTION_NAMES = Object.keys(ACTION_SETTINGS)
+const VALID_ACTION_NAMES = Object.keys(ACTION_SETTINGS);
 
 module.exports = {
   ACTION_SETTINGS,
-  VALID_ACTION_NAMES
-}
+  VALID_ACTION_NAMES,
+};

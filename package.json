@@ -4,7 +4,7 @@
   "description": "Simple logic to writting scripts test Web UI",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"No test specified\" && exit 0"
+    "test": "echo \"No test specified\""
   },
   "files": [
     "modules",
@@ -22,7 +22,7 @@
     "ui"
   ],
   "author": "LT",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/linhnt2803/simple-web-ui-tester/issues"
   },

@@ -15,7 +15,7 @@ async function runActions(actions) {
 }
 
 async function runActionsOnPage(actions, page) {
-  let startTime = new Date()
+  let startTime = new Date();
   let result = {
     startTime: new Date(),
     endTime: startTime,
