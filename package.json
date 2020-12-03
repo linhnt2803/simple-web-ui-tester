@@ -1,6 +1,6 @@
 {
   "name": "simple-web-ui-tester",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Simple logic to writting scripts test Web UI",
   "main": "index.js",
   "scripts": {
