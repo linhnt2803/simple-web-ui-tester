@@ -5,7 +5,6 @@ const {
   numberMinMax,
 } = require("../utils/validator");
 const { wait } = require("../utils");
-const { formatActions } = require("./action-formatter");
 
 // logical: ['condition', 'actionTrue', 'actionFalse']
 // for: ['count', 'action']
@@ -191,6 +190,8 @@ const ACTION_SETTINGS = {
     templateCommand: null,
     regexCommand: null,
     metaValidator: function (meta) {
+      // place import here prevent circle dependencies
+      const { formatActions } = require("./action-formatter");
       let { actions, groupName } = meta;
 
       meta.actions = formatActions(actions);
