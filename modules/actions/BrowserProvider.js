@@ -91,10 +91,19 @@ class BrowserProvider {
 }
 
 const browserProvider = new BrowserProvider({
-  headless: process.env.NODE_ENV === "production",
+  headless: false,
 });
+
+/**
+ * 
+ * @param {Boolean} headless
+ */
+function setBrowserHeadless(headless) {
+  browserProvider._options.headless = Boolean(headless)
+}
 
 module.exports = {
   BrowserProvider,
   browserProvider,
+  setBrowserHeadless,
 };
