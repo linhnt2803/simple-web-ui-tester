@@ -217,6 +217,36 @@ const ACTION_SETTINGS = {
       };
     },
   },
+  /**
+   * @summary Take a page screen shot then save to file (path = file path)
+   */
+  capture_screen: {
+    metaKeys: ["path"],
+    templateCommand: "capture_screen to <<path>>",
+    regexCommand: /^capture_screen to <<(?<path>.*)>>(?<note>.*)$/,
+    metaValidator: function (meta) {
+      let { path } = meta;
+      return validateAll([
+        stringNotEmpty("path")(path),
+        stringLengthMinMax("path", 1, 512)(path),
+      ]);
+    },
+    handler: async function (meta, page) {
+      let { path } = meta;
+      let startTime = Date.now();
+      await page.screenshot({ path: path }).catch((err) => {
+        if (err.message) {
+          err.message = `capture_screen Error: ${err.message}`;
+        }
+        throw err;
+      });
+
+      return {
+        summary: `capture_screen to <<${path}>>`,
+        duration: Date.now() - startTime,
+      };
+    },
+  },
 };
 
 const VALID_ACTION_NAMES = Object.keys(ACTION_SETTINGS);
