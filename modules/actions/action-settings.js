@@ -221,7 +221,33 @@ const ACTION_SETTINGS = {
 
 const VALID_ACTION_NAMES = Object.keys(ACTION_SETTINGS);
 
+/**
+ * @summary make sure you well understand how to define an action
+ *  - actionName: name of action, should be unique, if pass an defined action, so it will overwrite
+ *  - actionSetting.metaKeys: list of all keys in meta object
+ *  - templateCommand: a String notice how to define action as template string (set null if action
+ *    do not support)
+ *  - regexCommand: regex to get meta values from template string (set null if action do not support)
+ *  - handler: function handle the action
+ *
+ * @param {String} actionName
+ * @param {{
+ *  metaKeys: String[],
+ *  templateCommand: (String | null),
+ *  regexCommand: (RegExp | null),
+ *  metaValidator: (meta) => (String | null),
+ *  handler: (meta, page) => any
+ * }} actionSetting
+ */
+function addActionSetting(actionName, actionSetting) {
+  ACTION_SETTINGS[actionName] = actionSetting;
+  if (!VALID_ACTION_NAMES.includes(actionName)) {
+    VALID_ACTION_NAMES.push(actionName);
+  }
+}
+
 module.exports = {
   ACTION_SETTINGS,
   VALID_ACTION_NAMES,
+  addActionSetting,
 };

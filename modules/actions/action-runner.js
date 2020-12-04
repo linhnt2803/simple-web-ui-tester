@@ -1,15 +1,39 @@
 const { ACTION_SETTINGS } = require("./action-settings");
 const { browserProvider } = require("./BrowserProvider");
+const { formatActions } = require("./action-formatter");
+
+const _OPTIONS = {
+  closeBrowserAfterRunActions: true,
+};
+
+function setCloseBrowserAfterRunActions(shouldClose) {
+  _OPTIONS.closeBrowserAfterRunActions = Boolean(shouldClose);
+}
+
+function formatThenRunActions(actionsData) {
+  let actions = formatActions(actionsData);
+  return runActions(actions);
+}
+
+function formatThenRunActionsOnPage(actionsData, page) {
+  let actions = formatActions(actionsData);
+  return runActionsOnPage(actions, page);
+}
 
 async function runActions(actions) {
   let page = await browserProvider.getPage();
-
+  let closer = async () => {
+    await page.close().catch(() => {});
+    if (_OPTIONS.closeBrowserAfterRunActions) {
+      await browserProvider.closeBrowser();
+    }
+  };
   try {
     let result = await runActionsOnPage(actions, page);
-    await page.close().catch(() => {});
+    await closer();
     return result;
   } catch (error) {
-    await page.close().catch(() => {});
+    await closer();
     throw error;
   }
 }
@@ -49,6 +73,9 @@ async function runActionsOnPage(actions, page) {
 }
 
 module.exports = {
+  formatThenRunActions,
+  formatThenRunActionsOnPage,
   runActions,
   runActionsOnPage,
+  setCloseBrowserAfterRunActions,
 };

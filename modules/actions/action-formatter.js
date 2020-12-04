@@ -1,14 +1,10 @@
 const { ACTION_SETTINGS, VALID_ACTION_NAMES } = require("./action-settings");
 
-function formatActions(actions) {
-  let actionsFormatted = [];
-  if (!(actions instanceof Array)) throw new Error("Actions must be array!");
+function formatActions(actionsData) {
+  if (!(actionsData instanceof Array))
+    throw new Error("Actions must be array!");
 
-  for (let action of actions) {
-    actionsFormatted.push(formatAction(action));
-  }
-
-  return actionsFormatted;
+  return actionsData.map(formatAction);
 }
 
 function formatAction(action) {
