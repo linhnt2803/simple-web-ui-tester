@@ -3,8 +3,15 @@ const {
   stringLengthMinMax,
   validateAll,
   numberMinMax,
+  enum: checkEnum,
 } = require("../utils/validator");
 const { wait } = require("../utils");
+
+const {
+  DEFAULT_PUPPETEER_TIMEOUT,
+  AN_HOUR,
+  WAIT_UNTIL_ENUMS,
+} = require("../config");
 
 // logical: ['condition', 'actionTrue', 'actionFalse']
 // for: ['count', 'action']
@@ -19,23 +26,47 @@ const ACTION_SETTINGS = {
    *  enter to page
    */
   go_to: {
-    metaKeys: ["url"],
-    templateCommand: "go_to <<url>>",
-    regexCommand: /^go_to <<(?<url>.*)>>(?<note>.*)$/,
+    metaKeys: ["url", "waitUntil", "timeout", "note"],
+    templateCommand: [
+      "go_to <<url>>",
+      "go_to <<url>> waitUntil <<waitUntil>> timeout <<timeout>> note <<note>>",
+    ],
+    regexCommand: /(?<=(go_to[\s]+<<))(?<url>([^>>]*))(?=>>)(>>)(?<optional>.*)$/,
+    optionalMetasRegex: {
+      waitUntil: _genOptionalMetaRegex("waitUntil"),
+      timeout: _genOptionalMetaRegex("timeout"),
+      note: _genOptionalMetaRegex("note"),
+    },
     metaValidator: function (meta) {
-      let { url } = meta;
+      meta.timeout = meta.timeout ? parseInt(meta.timeout) || 0 : undefined;
+      let { url, waitUntil, timeout, note } = meta;
+
       return validateAll([
         stringNotEmpty("url")(url),
         stringLengthMinMax("url", 2, 512)(url),
+        checkEnum("waitUntil", WAIT_UNTIL_ENUMS)(waitUntil),
+        numberMinMax("timeout", 0, AN_HOUR)(timeout),
+        stringLengthMinMax("note", 0, 1024)(note),
       ]);
     },
     handler: async function (meta, page) {
-      let { url } = meta;
+      let { url, waitUntil, timeout, note } = meta;
       let startTime = Date.now();
-      await page.goto(url, { waitUntil: "networkidle0" });
+
+      await page.goto(url, {
+        waitUntil: waitUntil || "networkidle0",
+        timeout: timeout || DEFAULT_PUPPETEER_TIMEOUT,
+      });
+
+      let _waitUntilSum = _genOptionalMetaSummary("waitUntil", waitUntil);
+      let _timeoutSum = _genOptionalMetaSummary("timeout", timeout);
+      let _pageTitle = await page.title().catch(() => "")
+
       return {
-        summary: `go_to <<${url}>>`,
+        summary: `go_to <<${url}>>${_waitUntilSum}${_timeoutSum}`,
         duration: Date.now() - startTime,
+        note,
+        pageTitle: _pageTitle
       };
     },
   },
@@ -43,18 +74,28 @@ const ACTION_SETTINGS = {
    * @summary Same as user click on element match selector
    */
   click_on: {
-    metaKeys: ["selector"],
-    templateCommand: "click_on <<selector>>",
-    regexCommand: /^click_on <<(?<selector>.*)>>(?<note>.*)$/,
+    metaKeys: ["selector", "note"],
+    templateCommand: [
+      "click_on <<selector>>",
+      "click_on <<selector>> note <<note>>"
+    ],
+    // /^click_on <<(?<selector>.*)>>(?<note>.*)$/,
+    regexCommand: /(?<=(click_on[\s]+<<))(?<selector>([^>>]*))(?=>>)(>>)(?<optional>.*)$/,
+    optionalMetasRegex: {
+      note: _genOptionalMetaRegex("note"),
+    },
     metaValidator: function (meta) {
-      let { selector } = meta;
+      let { selector, note } = meta;
+
       return validateAll([
         stringNotEmpty("selector")(selector),
         stringLengthMinMax("selector", 1, 512)(selector),
+        stringLengthMinMax("note", 0, 1024)(note),
       ]);
     },
     handler: async function (meta, page) {
-      let { selector } = meta;
+      let { selector, note } = meta;
+
       let startTime = Date.now();
       let clicked = await page.evaluate((_selector) => {
         let item = document.querySelector(_selector);
@@ -72,6 +113,7 @@ const ACTION_SETTINGS = {
       return {
         summary: `click_on <<${selector}>>`,
         duration: Date.now() - startTime,
+        note
       };
     },
   },
@@ -79,19 +121,27 @@ const ACTION_SETTINGS = {
    * @summary Same as user enter a value to input element match selector
    */
   input_to: {
-    metaKeys: ["selector", "value"],
-    templateCommand: "input_to <<selector>> value <<value>>",
-    regexCommand: /^input_to <<(?<selector>.*)>> value <<(?<value>.*)>>(?<note>.*)$/,
+    metaKeys: ["selector", "value", "note"],
+    templateCommand: [
+      "input_to <<selector>> value <<value>>",
+      "input_to <<selector>> value <<value>> note <<note>>"
+    ],
+    // /^input_to <<(?<selector>.*)>> value <<(?<value>.*)>>(?<note>.*)$/
+    regexCommand: /(?<=(input_to[\s]+<<))(?<selector>([^>>]*))(?=>>)(>>)([\s]+value[\s]+<<)(?<value>([^>>]*))(?=>>)(>>)(?<optional>.*)$/,
+    optionalMetasRegex: {
+      note: _genOptionalMetaRegex("note"),
+    },
     metaValidator: function (meta) {
-      let { selector, value } = meta;
+      let { selector, value, note } = meta;
       return validateAll([
         stringNotEmpty("selector")(selector),
         stringLengthMinMax("selector", 1, 512)(selector),
         stringLengthMinMax("value", null, 2048)(value),
+        stringLengthMinMax("note", 0, 1024)(note),
       ]);
     },
     handler: async function (meta, page) {
-      let { selector, value } = meta;
+      let { selector, value, note } = meta;
       let startTime = Date.now();
       let inputted = await page.evaluate(
         (_selector, _value) => {
@@ -113,6 +163,7 @@ const ACTION_SETTINGS = {
       return {
         summary: `input_to <<${selector}>> value <<${value}>>`,
         duration: Date.now() - startTime,
+        note
       };
     },
   },
@@ -120,19 +171,28 @@ const ACTION_SETTINGS = {
    * @summary Same as user select a value on select element match selector
    */
   select_on: {
-    metaKeys: ["selector", "value"],
-    templateCommand: "select_on <<selector>> value <<value>>",
-    regexCommand: /^select_on <<(?<selector>.*)>> value <<(?<value>.*)>>(?<note>.*)$/,
+    metaKeys: ["selector", "value", "note"],
+    templateCommand: [
+      "select_on <<selector>> value <<value>>",
+      "select_on <<selector>> value <<value>> note <<note>>"
+    ],
+    // regexCommand: /^select_on <<(?<selector>.*)>> value <<(?<value>.*)>>(?<note>.*)$/,
+    regexCommand: /(?<=(select_on[\s]+<<))(?<selector>([^>>]*))(?=>>)(>>)([\s]+value[\s]+<<)(?<value>([^>>]*))(?=>>)(>>)(?<optional>.*)$/,
+    optionalMetasRegex: {
+      note: _genOptionalMetaRegex("note"),
+    },
     metaValidator: function (meta) {
-      let { selector, value } = meta;
+      let { selector, value, note } = meta;
+
       return validateAll([
         stringNotEmpty("selector")(selector),
         stringLengthMinMax("selector", 1, 512)(selector),
         stringLengthMinMax("value", null, 2048)(value),
+        stringLengthMinMax("note", 0, 1024)(note),
       ]);
     },
     handler: async function (meta, page) {
-      let { selector, value } = meta;
+      let { selector, value, note } = meta;
       let startTime = Date.now();
       let selectted = await page.evaluate(
         (_selector, _value) => {
@@ -154,6 +214,7 @@ const ACTION_SETTINGS = {
       return {
         summary: `select_on <<${selector}>> value <<${value}>>`,
         duration: Date.now() - startTime,
+        note
       };
     },
   },
@@ -161,17 +222,28 @@ const ACTION_SETTINGS = {
    * @summary Same as user wait in a time (count by milisec)
    */
   wait: {
-    metaKeys: ["milisec"],
-    templateCommand: "wait <<milisec>>",
-    regexCommand: /^wait <<(?<milisec>.*)>>(?<note>.*)$/,
+    metaKeys: ["milisec", "note"],
+    templateCommand: [
+      "wait <<milisec>>",
+      "wait <<milisec>> note <<note>>"
+    ],
+    // regexCommand: /^wait <<(?<milisec>.*)>>(?<note>.*)$/,
+    regexCommand: /(?<=(wait[\s]+<<))(?<milisec>([^>>]*))(?=>>)(>>)(?<optional>.*)$/,
+    optionalMetasRegex: {
+      note: _genOptionalMetaRegex("note"),
+    },
     metaValidator: function (meta) {
       meta.milisec = parseInt(meta.milisec) || 0;
-      let anHour = 1000 * 60 * 60;
 
-      return numberMinMax("milisec", 0, anHour);
+      let { milisec, note } = meta
+
+      return validateAll([
+        numberMinMax("milisec", 0, AN_HOUR)(milisec),
+        stringLengthMinMax("note", 0, 1024)(note)
+      ]);
     },
     handler: async function (meta, page) {
-      let { milisec } = meta;
+      let { milisec, note } = meta;
       let startTime = Date.now();
 
       await wait(milisec);
@@ -179,6 +251,7 @@ const ACTION_SETTINGS = {
       return {
         summary: `wait <<${milisec}>>`,
         duration: Date.now() - startTime,
+        note
       };
     },
   },
@@ -186,25 +259,26 @@ const ACTION_SETTINGS = {
    * @summary Same as user wait in a time (count by milisec)
    */
   group: {
-    metaKeys: ["actions", "groupName"],
+    metaKeys: ["actions", "groupName", "note"],
     templateCommand: null,
     regexCommand: null,
     metaValidator: function (meta) {
       // place import here prevent circle dependencies
       const { formatActions } = require("./action-formatter");
-      let { actions, groupName } = meta;
+      let { actions, groupName, note } = meta;
 
       meta.actions = formatActions(actions);
 
       return validateAll([
         stringNotEmpty("selector")(groupName),
         stringLengthMinMax("selector", 1, 512)(groupName),
+        stringLengthMinMax("note", 0, 1024)(note)
       ]);
     },
     handler: async function (meta, page) {
       // place import here prevent circle dependencies
       const { runActionsOnPage } = require("./action-runner");
-      let { groupName, actions } = meta;
+      let { groupName, actions, note } = meta;
       let actionCount = actions.length;
       let startTime = Date.now();
 
@@ -214,6 +288,7 @@ const ACTION_SETTINGS = {
         summary: `group '${groupName}' with ${actionCount} actions`,
         duration: Date.now() - startTime,
         result,
+        note
       };
     },
   },
@@ -221,18 +296,26 @@ const ACTION_SETTINGS = {
    * @summary Take a page screen shot then save to file (path = file path)
    */
   capture_screen: {
-    metaKeys: ["path"],
-    templateCommand: "capture_screen to <<path>>",
-    regexCommand: /^capture_screen to <<(?<path>.*)>>(?<note>.*)$/,
+    metaKeys: ["path", "note"],
+    templateCommand: [
+      "capture_screen <<path>>",
+      "capture_screen <<path>> note <<note>>"
+    ],
+    // regexCommand: /^capture_screen <<(?<path>.*)>>(?<note>.*)$/,
+    regexCommand: /(?<=(capture_screen[\s]+<<))(?<path>([^>>]*))(?=>>)(>>)(?<optional>.*)$/,
+    optionalMetasRegex: {
+      note: _genOptionalMetaRegex("note"),
+    },
     metaValidator: function (meta) {
-      let { path } = meta;
+      let { path, note } = meta;
       return validateAll([
         stringNotEmpty("path")(path),
         stringLengthMinMax("path", 1, 512)(path),
+        stringLengthMinMax("note", 0, 1024)(note)
       ]);
     },
     handler: async function (meta, page) {
-      let { path } = meta;
+      let { path, note } = meta;
       let startTime = Date.now();
       await page.screenshot({ path: path }).catch((err) => {
         if (err.message) {
@@ -244,6 +327,7 @@ const ACTION_SETTINGS = {
       return {
         summary: `capture_screen to <<${path}>>`,
         duration: Date.now() - startTime,
+        note
       };
     },
   },
@@ -274,6 +358,16 @@ function addActionSetting(actionName, actionSetting) {
   if (!VALID_ACTION_NAMES.includes(actionName)) {
     VALID_ACTION_NAMES.push(actionName);
   }
+}
+
+function _genOptionalMetaRegex(metaKey) {
+  return new RegExp(
+    `(?<=(${metaKey}[\\s]+<<))(?<${metaKey}>([^>>]*))(?=>>)(>>)`
+  );
+}
+
+function _genOptionalMetaSummary(varName, value) {
+  return value === undefined ? "" : ` ${varName} <<${value}>>`;
 }
 
 module.exports = {

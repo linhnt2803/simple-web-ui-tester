@@ -61,7 +61,7 @@ async function runActionsOnPage(actions, page) {
       result.actions.push(actionResult);
     }
     result.endTime = new Date();
-    result.duration = result.startTime - result.endTime;
+    result.duration = result.endTime - result.startTime;
     return result;
   } catch (error) {
     let errorMessage = currentActionName

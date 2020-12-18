@@ -76,6 +76,12 @@ module.exports = {
     }
     return `${_genValueInfo(varName, v)} must be number!`;
   },
+  enum: (varName, enums = []) => (v) => {
+    if (typeof v === "undefined") {
+      return true; // by pass value undefined
+    }
+    return ((enums || []).includes(v)) || `${_genValueInfo(varName, v)} must be one of ${JSON.stringify(enums)}!`
+  },
   validateAll(validateResults) {
     for (let result of validateResults) {
       if (!result || typeof result === "string") {

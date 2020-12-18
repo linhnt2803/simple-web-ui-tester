@@ -60,23 +60,31 @@ function _genActionMetaFromCommand(template, actionSetting) {
       `Action '${template}' do not support action template, this must define by object!`
     );
 
-  let { metaKeys, regexCommand } = actionSetting;
+  let { metaKeys, regexCommand, optionalMetasRegex } = actionSetting;
+  let matchedRegex = String(template).match(regexCommand);
 
-  let regexTest = String(template).match(regexCommand);
-
-  if (!regexTest)
+  if (!matchedRegex)
     throw new Error(
       `Action template string seem not to be valid: '${template}'`
     );
 
-  let dataFromCommand = regexTest.groups || {};
-
-  let meta = {
-    note: String(dataFromCommand["note"] || "").trim(),
-  };
+  let dataFromCommand = matchedRegex.groups || {};
+  let optionalTemplate = dataFromCommand["optional"] || "";
+  let hasOptionalMeta = optionalMetasRegex && optionalTemplate
+  
+  let meta = {};
 
   for (let key of metaKeys) {
-    meta[key] = dataFromCommand[key];
+    if(hasOptionalMeta && key in optionalMetasRegex) { // optional key, can be exists or not
+      let optionalReg = optionalMetasRegex[key]
+      let optionalMatchedRegex = String(optionalTemplate).match(optionalReg)
+      let optinalMetaValue = optionalMatchedRegex
+        && optionalMatchedRegex.groups
+        && optionalMatchedRegex.groups[key]
+      meta[key] = optinalMetaValue || undefined
+    } else { // require key
+      meta[key] = dataFromCommand[key];
+    }
   }
 
   return meta;

@@ -2,11 +2,17 @@ const pupp = require("puppeteer");
 const uuid = require("uuid").v1;
 const { Browser } = require("puppeteer/lib/cjs/puppeteer/common/Browser");
 
+const SHOULD_CLOSE_BROWSER_AFTER = 1000 * 60 * 60 * 16; // close browser if can after 16 hour
+
+class BrowserProviderOptions {
+  headless = true;
+  browserTimeout = 0;
+}
+
 const DEFAULT_OPTIONS = {
   headless: false,
+  browserTimeout: SHOULD_CLOSE_BROWSER_AFTER,
 };
-
-const SHOULD_CLOSE_BROWSER_AFTER = 1000 * 60 * 60 * 0.5; // close browser if can after 0.5 hour
 
 class BrowserProvider {
   constructor(opts) {
@@ -63,6 +69,11 @@ class BrowserProvider {
     }
   }
 
+  /**
+   *
+   * @param {BrowserProviderOptions} opts
+   * @returns {BrowserProviderOptions}
+   */
   _bindDefaultOptions(opts) {
     for (let key in DEFAULT_OPTIONS) {
       if (opts[key] === undefined) {
@@ -86,7 +97,9 @@ class BrowserProvider {
   }
 
   _isBrowserOpenedTooLong() {
-    return Date.now() - this._browserTimestamps >= SHOULD_CLOSE_BROWSER_AFTER;
+    return this._options.browserTimeout
+      ? Date.now() - this._browserTimestamps >= this._options.browserTimeout
+      : false;
   }
 }
 
@@ -95,11 +108,11 @@ const browserProvider = new BrowserProvider({
 });
 
 /**
- * 
+ *
  * @param {Boolean} headless
  */
 function setBrowserHeadless(headless) {
-  browserProvider._options.headless = Boolean(headless)
+  browserProvider._options.headless = Boolean(headless);
 }
 
 module.exports = {
