@@ -270,8 +270,8 @@ const ACTION_SETTINGS = {
       meta.actions = formatActions(actions);
 
       return validateAll([
-        stringNotEmpty("selector")(groupName),
-        stringLengthMinMax("selector", 1, 512)(groupName),
+        stringNotEmpty("groupName")(groupName),
+        stringLengthMinMax("groupName", 1, 512)(groupName),
         stringLengthMinMax("note", 0, 1024)(note)
       ]);
     },
